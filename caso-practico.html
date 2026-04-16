@@ -1793,7 +1793,7 @@
                         <label class="form-label" for="field-link">Link de entrega *</label>
                         <input class="form-input" id="field-link" type="url" placeholder="https://docs.google.com/... o https://github.com/... o WeTransfer..." required>
                         <div class="form-hint">Podés compartir cualquier tipo de link: Google Sheets, Looker Studio, repositorio, web propia, WeTransfer, etc.</div>
-                        <div class="form-error-msg" id="err-link">El link de entrega es obligatorio.</div>
+                        <div class="form-error-msg" id="err-link">Ingresá un link válido que empiece con https://</div>
                     </div>
 
                     <div class="form-group">
@@ -2023,7 +2023,14 @@
             valid = false;
         }
 
-        if (!link.value.trim()) {
+        const linkVal = link.value.trim();
+        const isValidUrl = (() => {
+            try {
+                const u = new URL(linkVal);
+                return u.protocol === 'https:';
+            } catch { return false; }
+        })();
+        if (!linkVal || !isValidUrl) {
             link.classList.add('error');
             document.getElementById('err-link').style.display = 'block';
             valid = false;
