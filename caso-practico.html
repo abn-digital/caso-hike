@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caso Práctico – Data, Automation & Reporting | Hike</title>
+    <meta name="description" content="Caso práctico de evaluación para perfil de Data, Automation y Reporting. Analizá datos de marketing y ventas, construí visualizaciones y proponé automatizaciones.">
+
+    <!-- ═══════════════════════════════════════════════
+         CONFIGURACIÓN — editá estas variables fácilmente
+    ═══════════════════════════════════════════════ -->
+    <script>
+        window.CASO_CONFIG = {
+            // Webhook/endpoint para notificaciones (dejá en null para desactivar)
+            WEBHOOK_URL: null,
+            // Alternativas: 'https://hook.n8n.cloud/xxxxx', 'https://script.google.com/macros/s/xxxx/exec', 'https://hooks.slack.com/services/xxx'
+
+            // URL de descarga del ZIP con los archivos del caso
+            DOWNLOAD_ZIP_URL: 'data/caso-hike-data.zip',
+        };
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ═══════════════════════════════════════════
+           DESIGN TOKENS
+        ═══════════════════════════════════════════ */
+        :root {
+            --primary: #06b6d4;
+            --primary-dim: rgba(6, 182, 212, 0.12);
+            --secondary: #6366f1;
+            --secondary-dim: rgba(99, 102, 241, 0.12);
+            --accent: #f59e0b;
+            --emerald: #10b981;
+            --dark: #0f172a;
+            --dark-2: #111827;
+            --surface: rgba(255, 255, 255, 0.03);
+            --surface-2: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.07);
+            --border-strong: rgba(255, 255, 255, 0.12);
+            --text-muted: #94a3b8;
+            --text-faint: #475569;
+            --radius-sm: 12px;
+            --radius: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 32px;
+        }
+
+        /* ═══════════════════════════════════════════
+           RESET & BASE
+        ═══════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark);
+            color: #f1f5f9;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5 {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.2;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        img { max-width: 100%; }
+
+        /* ═══════════════════════════════════════════
+           BACKGROUND
+        ═══════════════════════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 75% 5%, rgba(99, 102, 241, 0.1), transparent 42%),
+                radial-gradient(circle at 15% 85%, rgba(6, 182, 212, 0.1), transparent 42%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.04), transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══════════════════════════════════════════
+           GLASSMORPHISM
+        ═══════════════════════════════════════════ */
+        .glass {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+        }
+
+        .glass-strong {
+            background: var(--surface-2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+        }
+
+        /* ═══════════════════════════════════════════
+           TYPOGRAPHY UTILITIES
+        ═══════════════════════════════════════════ */
+        .gradient-text {
+            background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-text-warm {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+        }
+
+        .label-cyan { background: rgba(6,182,212,0.12); color: #22d3ee; border: 1px solid rgba(6,182,212,0.2); }
+        .label-indigo { background: rgba(99,102,241,0.12); color: #818cf8; border: 1px solid rgba(99,102,241,0.2); }
+        .label-amber { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        .label-emerald { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+        .label-rose { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        /* ═══════════════════════════════════════════
+           BUTTONS
+        ═══════════════════════════════════════════ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 32px;
+            border-radius: 999px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(6,182,212,0.28);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 36px rgba(6,182,212,0.45);
+        }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-ghost {
+            background: var(--surface-2);
+            color: #f1f5f9;
+            border: 1px solid var(--border-strong);
+        }
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(6,182,212,0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            color: #fff;
+            box-shadow: 0 4px 24px rgba(16,185,129,0.28);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 36px rgba(16,185,129,0.45);
+        }
+
+        .btn-download {
+            background: rgba(6,182,212,0.1);
+            color: #22d3ee;
+            border: 1px solid rgba(6,182,212,0.25);
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-download:hover {
+            background: rgba(6,182,212,0.18);
+            border-color: rgba(6,182,212,0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-lg { padding: 18px 48px; font-size: 1.1rem; }
+        .btn-sm { padding: 10px 20px; font-size: 0.85rem; }
+
+        /* ═══════════════════════════════════════════
+           LAYOUT
+        ═══════════════════════════════════════════ */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .container-narrow {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section { position: relative; z-index: 1; }
+
+        .section-spacer { padding: 96px 0; }
+        .section-alt { background: rgba(255,255,255,0.018); }
+
+        /* ═══════════════════════════════════════════
+           ANIMATIONS
+        ═══════════════════════════════════════════ */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.75; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.93); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(120%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(120%); }
+        }
+
+        .float-anim { animation: float 5s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.75s cubic-bezier(0.4,0,0.2,1), transform 0.75s cubic-bezier(0.4,0,0.2,1);
+        }
+        .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
+        .delay-5 { transition-delay: 0.5s; }
+        .delay-6 { transition-delay: 0.6s; }
+
+        /* ═══════════════════════════════════════════
+           HERO GLOW
+        ═══════════════════════════════════════════ */
+        .hero-glow {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(6,182,212,0.07), transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══════════════════════════════════════════
+           CARD HOVER
+        ═══════════════════════════════════════════ */
+        .card-hover {
+            transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            border-color: rgba(6,182,212,0.25);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.25);
+        }
+
+        /* ═══════════════════════════════════════════
+           CHECK MARKS
+        ═══════════════════════════════════════════ */
+        .check-cyan { color: #22d3ee; flex-shrink: 0; }
+        .check-indigo { color: #818cf8; flex-shrink: 0; }
+        .check-emerald { color: #34d399; flex-shrink: 0; }
+        .check-amber { color: #fbbf24; flex-shrink: 0; }
+
+        /* ═══════════════════════════════════════════
+           SCREEN TRANSITIONS
+        ═══════════════════════════════════════════ */
+        #screen-welcome {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--dark);
+            padding: 32px 24px;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        #screen-welcome::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 70% 15%, rgba(99,102,241,0.13), transparent 45%),
+                radial-gradient(circle at 20% 80%, rgba(6,182,212,0.13), transparent 45%);
+            pointer-events: none;
+        }
+
+        #screen-welcome .welcome-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            width: 100%;
+        }
+
+        #screen-main {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        #screen-main.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* ═══════════════════════════════════════════
+           WELCOME SCREEN
+        ═══════════════════════════════════════════ */
+        .welcome-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 48px;
+        }
+
+        .welcome-logo-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #06b6d4, #6366f1);
+        }
+
+        .welcome-logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+            color: #f1f5f9;
+        }
+
+        .welcome-tag-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .welcome-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2.2rem, 6vw, 3.8rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.65;
+        }
+
+        .welcome-body {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+
+        .welcome-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 48px;
+            text-align: left;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+        }
+
+        .welcome-rule {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .welcome-rule-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ═══════════════════════════════════════════
+           NAVBAR
+        ═══════════════════════════════════════════ */
+        #navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 50;
+            background: rgba(15,23,42,0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        #navbar.visible { display: block; }
+
+        .navbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .navbar-logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #06b6d4, #6366f1);
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 28px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .navbar-links a:hover { color: #22d3ee; transition: color 0.2s; }
+
+        /* ═══════════════════════════════════════════
+           PROGRESS BAR
+        ═══════════════════════════════════════════ */
+        .progress-bar-wrap {
+            width: 100%;
+            height: 2px;
+            background: var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 200;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #6366f1);
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        /* ═══════════════════════════════════════════
+           MAIN PAGE HERO
+        ═══════════════════════════════════════════ */
+        #page-hero {
+            padding: 120px 24px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-hero-title {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+        }
+
+        .page-hero-sub {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 48px;
+            line-height: 1.65;
+        }
+
+        .hero-pills {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION HEADERS
+        ═══════════════════════════════════════════ */
+        .section-header {
+            text-align: center;
+            margin-bottom: 56px;
+        }
+
+        .section-header h2 {
+            font-size: clamp(1.7rem, 4vw, 2.6rem);
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-header p {
+            font-size: 0.97rem;
+            color: var(--text-muted);
+            max-width: 580px;
+            margin: 0 auto;
+            line-height: 1.65;
+        }
+
+        /* ═══════════════════════════════════════════
+           TABLE CARDS
+        ═══════════════════════════════════════════ */
+        .table-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
+        }
+
+        .table-card {
+            padding: 28px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .table-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .table-card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+
+        .field-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-list li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .field-pill {
+            display: inline-block;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+            color: #94a3b8;
+        }
+
+        /* ═══════════════════════════════════════════
+           METRIC CARDS
+        ═══════════════════════════════════════════ */
+        .metric-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 20px;
+        }
+
+        .metric-card {
+            padding: 28px;
+        }
+
+        .metric-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .metric-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .metric-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .metric-formula {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: #22d3ee;
+        }
+
+        /* ═══════════════════════════════════════════
+           DELIVERABLES
+        ═══════════════════════════════════════════ */
+        .deliverable-item {
+            padding: 32px;
+            margin-bottom: 16px;
+        }
+
+        .deliverable-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            margin-bottom: 16px;
+        }
+
+        .deliverable-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .deliverable-text {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            line-height: 1.65;
+        }
+
+        .tools-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tool-chip {
+            display: inline-block;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .check-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .check-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .check-list li svg { flex-shrink: 0; margin-top: 2px; }
+
+        /* ═══════════════════════════════════════════
+           DOWNLOAD SECTION
+        ═══════════════════════════════════════════ */
+        .download-hero {
+            background: linear-gradient(135deg, rgba(6,182,212,0.07), rgba(99,102,241,0.07));
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-xl);
+            padding: 56px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.06), transparent 60%);
+            pointer-events: none;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+
+        /* ═══════════════════════════════════════════
+           STEPS / TIMELINE
+        ═══════════════════════════════════════════ */
+        .steps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+
+        .step-item {
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            gap: 24px;
+            padding: 0 0 32px;
+            position: relative;
+        }
+
+        .step-item:last-child { padding-bottom: 0; }
+
+        .step-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .step-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-line {
+            width: 2px;
+            flex: 1;
+            background: linear-gradient(to bottom, rgba(6,182,212,0.3), rgba(99,102,241,0.1));
+            margin-top: 8px;
+        }
+
+        .step-item:last-child .step-line { display: none; }
+
+        .step-content {
+            padding: 4px 0 0;
+        }
+
+        .step-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .step-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ═══════════════════════════════════════════
+           EVALUATION CRITERIA
+        ═══════════════════════════════════════════ */
+        .criteria-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+        }
+
+        .criterion-item {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .criterion-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .criterion-text {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+
+        /* ═══════════════════════════════════════════
+           FORM / DELIVERY SECTION
+        ═══════════════════════════════════════════ */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.83rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            color: #f1f5f9;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.93rem;
+            transition: all 0.25s ease;
+            outline: none;
+            appearance: none;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: rgba(6,182,212,0.5);
+            background: rgba(6,182,212,0.04);
+            box-shadow: 0 0 0 3px rgba(6,182,212,0.1);
+        }
+
+        .form-input.error,
+        .form-textarea.error {
+            border-color: rgba(239,68,68,0.5);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder { color: #475569; }
+
+        .form-textarea { resize: vertical; min-height: 100px; }
+
+        .form-hint {
+            font-size: 0.78rem;
+            color: #475569;
+            margin-top: 6px;
+        }
+
+        .form-error-msg {
+            font-size: 0.78rem;
+            color: #f87171;
+            margin-top: 6px;
+            display: none;
+        }
+
+        /* ═══════════════════════════════════════════
+           SUCCESS SCREEN
+        ═══════════════════════════════════════════ */
+        #success-screen {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(15,23,42,0.97);
+            backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 32px;
+        }
+
+        #success-screen.visible { display: flex; animation: fadeIn 0.4s ease; }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.15));
+            border: 1px solid rgba(16,185,129,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 32px;
+            animation: scaleIn 0.4s ease 0.1s both;
+        }
+
+        /* ═══════════════════════════════════════════
+           TOAST
+        ═══════════════════════════════════════════ */
+        #toast-container {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+            max-width: 340px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.35s ease;
+        }
+
+        .toast.hiding { animation: toastOut 0.3s ease forwards; }
+
+        .toast-success {
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #34d399;
+        }
+
+        .toast-info {
+            background: rgba(6,182,212,0.12);
+            border: 1px solid rgba(6,182,212,0.25);
+            color: #22d3ee;
+        }
+
+        .toast-error {
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.25);
+            color: #f87171;
+        }
+
+        /* ═══════════════════════════════════════════
+           FOOTER
+        ═══════════════════════════════════════════ */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-faint);
+            font-size: 0.8rem;
+        }
+
+        /* ═══════════════════════════════════════════
+           OPTIONAL BADGE
+        ═══════════════════════════════════════════ */
+        .optional-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.2);
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #fbbf24;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* ═══════════════════════════════════════════
+           DIVIDER
+        ═══════════════════════════════════════════ */
+        .divider { border: 0; border-top: 1px solid var(--border); margin: 0; }
+
+        /* ═══════════════════════════════════════════
+           RESPONSIVE
+        ═══════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            .navbar-links { display: none; }
+            .download-hero { padding: 36px 24px; }
+            .section-spacer { padding: 72px 0; }
+            .step-item { grid-template-columns: 48px 1fr; gap: 16px; }
+            .step-num { width: 38px; height: 38px; font-size: 0.85rem; }
+            .welcome-title { font-size: 2rem; }
+        }
+
+        @media (max-width: 480px) {
+            .download-buttons { flex-direction: column; align-items: center; }
+            .welcome-rules { padding: 16px 18px; }
+        }
+
+        /* Accordion */
+        .accordion-item {
+            border-bottom: 1px solid var(--border);
+        }
+        .accordion-item:last-child { border-bottom: none; }
+
+        .accordion-trigger {
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            padding: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            color: #f1f5f9;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            gap: 12px;
+        }
+
+        .accordion-trigger:hover { color: #22d3ee; }
+
+        .accordion-chevron {
+            flex-shrink: 0;
+            transition: transform 0.3s ease;
+            color: var(--text-faint);
+        }
+
+        .accordion-item.open .accordion-chevron {
+            transform: rotate(180deg);
+            color: #22d3ee;
+        }
+
+        .accordion-body {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        .accordion-item.open .accordion-body {
+            max-height: 1000px;
+        }
+
+        .accordion-body-inner {
+            padding: 0 0 24px;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Loading state button */
+        .btn-loading { opacity: 0.8; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     PROGRESS BAR
+══════════════════════════════════════════════════ -->
+<div class="progress-bar-wrap" id="progress-bar-wrap" style="display:none;">
+    <div class="progress-bar-fill" id="progress-bar-fill"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     SUCCESS OVERLAY
+══════════════════════════════════════════════════ -->
+<div id="success-screen" role="dialog" aria-modal="true" aria-labelledby="success-title">
+    <div class="success-icon">
+        <svg width="40" height="40" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M20 6L9 17l-5-5"/>
+        </svg>
+    </div>
+    <h2 id="success-title" style="font-family:'Outfit',sans-serif; font-size:2rem; font-weight:800; margin-bottom:16px;">
+        ¡Gracias por tu entrega!
+    </h2>
+    <p style="color:var(--text-muted); max-width:480px; line-height:1.65; margin-bottom:40px;">
+        Recibimos correctamente tu caso.<br>Nos pondremos en contacto con vos luego de la revisión.
+    </p>
+    <div class="section-label label-emerald" style="margin-bottom:0;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.11 1.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.46-.46a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+        Entrega registrada
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 1 — BIENVENIDA
+══════════════════════════════════════════════════ -->
+<div id="screen-welcome" role="main">
+    <div class="welcome-inner" style="animation: fadeInUp 0.7s ease both;">
+
+        <!-- Logotipo / Brand -->
+        <div class="welcome-logo">
+            <div class="welcome-logo-dot"></div>
+            <span class="welcome-logo-text">Hike · Evaluación Técnica</span>
+            <div class="welcome-logo-dot"></div>
+        </div>
+
+        <!-- Tags -->
+        <div class="welcome-tag-row">
+            <span class="section-label label-cyan" style="margin-bottom:0;">Data & Reporting</span>
+            <span class="section-label label-indigo" style="margin-bottom:0;">Automation</span>
+            <span class="section-label label-amber" style="margin-bottom:0;">Caso Práctico</span>
+        </div>
+
+        <!-- Título -->
+        <h1 class="welcome-title">
+            Caso Práctico —<br>
+            <span class="gradient-text">Data, Automation<br>& Reporting</span>
+        </h1>
+
+        <!-- Subtítulo -->
+        <p class="welcome-subtitle">
+            Bienvenido/a. Vas a trabajar sobre un caso práctico basado en un ecommerce de productos para hogar y decoración.
+        </p>
+
+        <!-- Descripción -->
+        <p class="welcome-body">
+            En este ejercicio vas a analizar datos de marketing y ventas, ordenar la información disponible, construir visualizaciones funcionales y proponer mejoras de automatización y reporting.<br><br>
+            La idea no es que haya una única respuesta correcta, sino evaluar tu criterio, tu capacidad de estructurar información y tu forma de resolver un problema de negocio con datos.
+        </p>
+
+        <!-- Reglas / Aclaraciones -->
+        <div class="welcome-rules">
+            <div class="welcome-rule">
+                <svg class="welcome-rule-icon" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                <span>Podés usar la herramienta que prefieras. No hay restricciones de tecnología.</span>
+            </div>
+            <div class="welcome-rule">
+                <svg class="welcome-rule-icon" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Priorizamos claridad, criterio, funcionalidad y capacidad de análisis por sobre velocidad.</span>
+            </div>
+            <div class="welcome-rule">
+                <svg class="welcome-rule-icon" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>No buscamos una solución perfecta, sino una resolución sólida, clara y bien pensada.</span>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <button id="btn-start" class="btn btn-primary btn-lg" aria-label="Empezar el caso práctico">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 8 16 12 12 16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Empezar
+        </button>
+
+        <p style="font-size:0.78rem; color:var(--text-faint); margin-top:20px;">
+            Al hacer click se registrará el inicio del caso.
+        </p>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     NAVBAR (oculta hasta que se inicia el caso)
+══════════════════════════════════════════════════ -->
+<nav id="navbar" aria-label="Navegación del caso">
+    <div class="navbar-inner">
+        <div class="navbar-logo">
+            <div class="navbar-logo-dot"></div>
+            <span>Hike · Caso Práctico</span>
+        </div>
+        <div class="navbar-links">
+            <a href="#sec-contexto">Contexto</a>
+            <a href="#sec-datos">Datos</a>
+            <a href="#sec-entregables">Entregables</a>
+            <a href="#sec-descarga">Descarga</a>
+            <a href="#sec-entrega">Entrega</a>
+        </div>
+        <a href="#sec-entrega" class="btn btn-primary btn-sm" style="padding:9px 20px; font-size:0.82rem;">Entregar →</a>
+    </div>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════
+     SCREEN 2 — CONTENIDO PRINCIPAL
+══════════════════════════════════════════════════ -->
+<div id="screen-main">
+
+    <!-- ▸ MINI HERO ─────────────────────────────── -->
+    <section id="page-hero">
+        <div class="hero-glow"></div>
+        <div class="container" style="position:relative;z-index:1;">
+            <div class="hero-pills">
+                <span class="section-label label-cyan" style="margin-bottom:0;">Ecommerce · Hogar & Deco</span>
+                <span class="section-label label-indigo" style="margin-bottom:0;">Google Ads · Meta Ads</span>
+                <span class="section-label label-emerald" style="margin-bottom:0;">Ventas · Stock</span>
+            </div>
+
+            <h1 class="page-hero-title" style="margin-top:20px;">
+                Caso Práctico — <span class="gradient-text">Data, Automation & Reporting</span>
+            </h1>
+
+            <p class="page-hero-sub">
+                Trabajás sobre un ecommerce de productos para hogar y decoración. Tu misión: estructurar datos, construir un dashboard, proponer automatizaciones y detectar oportunidades.
+            </p>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 1: CONTEXTO ────────────────────── -->
+    <section id="sec-contexto" class="section-spacer section-alt">
+        <div class="container">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-cyan">Contexto del caso</span>
+                <h2>El negocio</h2>
+                <p>Antes de arrancar, conocé el contexto de la empresa sobre la que vas a trabajar.</p>
+            </div>
+
+            <div class="glass card-hover scroll-reveal delay-1" style="padding: 40px 48px; margin-bottom: 24px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+                    <div>
+                        <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:14px;">La empresa</h3>
+                        <p style="font-size:0.93rem; color:var(--text-muted); line-height:1.7;">
+                            Trabajarás con una empresa de ecommerce que vende <strong style="color:#f1f5f9;">productos para casa y decoración</strong>. La empresa invierte en pauta publicitaria en distintos canales digitales y busca mejorar la calidad de su reporting, ordenar mejor sus datos y detectar oportunidades de mejora en marketing, ventas y operación.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:14px;">El objetivo</h3>
+                        <ul class="check-list">
+                            <li>
+                                <svg width="16" height="16" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Entender una base de datos con múltiples tablas
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Ordenar y estructurar la información disponible
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Construir un dashboard útil e interactivo
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Proponer automatizaciones con sentido de negocio
+                            </li>
+                            <li>
+                                <svg width="16" height="16" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Detectar insights y oportunidades de mejora
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen del desafío -->
+            <div style="background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(6,182,212,0.07)); border: 1px solid rgba(99,102,241,0.2); border-radius: var(--radius-lg); padding: 28px 32px;" class="scroll-reveal delay-2">
+                <div style="display:flex; align-items:flex-start; gap:14px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(99,102,241,0.15); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        <svg width="18" height="18" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <div>
+                        <p style="font-weight:600; margin-bottom:8px; font-family:'Outfit',sans-serif;">Resumen del desafío</p>
+                        <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.7;">
+                            Trabajarás sobre un ecommerce de productos para hogar y decoración con inversión publicitaria en <strong style="color:#f1f5f9;">Google Ads</strong> y <strong style="color:#f1f5f9;">Meta Ads</strong>. A partir de las tablas entregadas, esperamos que puedas estructurar los datos, construir un dashboard funcional, proponer una automatización con sentido de negocio y detectar oportunidades de mejora.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 2: DATOS DISPONIBLES ──────────── -->
+    <section id="sec-datos" class="section-spacer">
+        <div class="container">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-indigo">Tablas disponibles</span>
+                <h2>Los datos con los que vas a trabajar</h2>
+                <p>Se te entregará una base de datos con las siguientes tablas. Podés asumir que puede haber diferencias de estructura, naming o granularidad entre ellas.</p>
+            </div>
+
+            <div class="table-cards-grid">
+
+                <!-- Google Ads -->
+                <div class="glass card-hover table-card scroll-reveal delay-1">
+                    <div class="table-card-icon" style="background:rgba(234,179,8,0.12);">
+                        <svg width="22" height="22" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                    </div>
+                    <div class="table-card-title">Google Ads</div>
+                    <ul class="field-list">
+                        <li><span class="field-pill">week</span></li>
+                        <li><span class="field-pill">campaign_name</span></li>
+                        <li><span class="field-pill">cost</span></li>
+                        <li><span class="field-pill">impressions</span></li>
+                        <li><span class="field-pill">clicks</span></li>
+                        <li><span class="field-pill">conv_value</span></li>
+                        <li><span class="field-pill">views</span></li>
+                        <li><span class="field-pill">leads</span></li>
+                    </ul>
+                </div>
+
+                <!-- Meta Ads -->
+                <div class="glass card-hover table-card scroll-reveal delay-2">
+                    <div class="table-card-icon" style="background:rgba(99,102,241,0.12);">
+                        <svg width="22" height="22" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+                    </div>
+                    <div class="table-card-title">Meta Ads</div>
+                    <ul class="field-list">
+                        <li><span class="field-pill">date_week</span></li>
+                        <li><span class="field-pill">campaign_name</span></li>
+                        <li><span class="field-pill">spend</span></li>
+                        <li><span class="field-pill">impressions</span></li>
+                        <li><span class="field-pill">link_clicks</span></li>
+                        <li><span class="field-pill">purchase_value</span></li>
+                    </ul>
+                </div>
+
+                <!-- Ventas -->
+                <div class="glass card-hover table-card scroll-reveal delay-3">
+                    <div class="table-card-icon" style="background:rgba(16,185,129,0.12);">
+                        <svg width="22" height="22" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                    </div>
+                    <div class="table-card-title">Ventas (Catálogo)</div>
+                    <ul class="field-list">
+                        <li><span class="field-pill">producto</span></li>
+                        <li><span class="field-pill">sku</span></li>
+                        <li><span class="field-pill">stock</span></li>
+                        <li><span class="field-pill">categoria</span></li>
+                    </ul>
+                </div>
+
+                <!-- Performance comercial -->
+                <div class="glass card-hover table-card scroll-reveal delay-4">
+                    <div class="table-card-icon" style="background:rgba(6,182,212,0.12);">
+                        <svg width="22" height="22" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
+                    <div class="table-card-title">Performance Comercial</div>
+                    <ul class="field-list">
+                        <li><span class="field-pill">week_start</span></li>
+                        <li><span class="field-pill">producto</span></li>
+                        <li><span class="field-pill">categoria</span></li>
+                        <li><span class="field-pill">unidades_vendidas</span></li>
+                        <li><span class="field-pill">ingreso_total</span></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Nota importante -->
+            <div style="margin-top:24px; padding:20px 24px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.18); border-radius:var(--radius); display:flex; align-items:flex-start; gap:12px;" class="scroll-reveal delay-5">
+                <svg width="18" height="18" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0; margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <p style="font-size:0.87rem; color:#94a3b8; line-height:1.65;">
+                    <strong style="color:#fbbf24;">Nota importante:</strong> Podés asumir que puede haber diferencias de estructura, naming o granularidad entre tablas. Parte del ejercicio consiste en ordenarlas de forma lógica para construir una solución consistente.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 3: CONTEXTO MARKETING DIGITAL ─── -->
+    <section class="section-spacer section-alt">
+        <div class="container">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-amber">Contexto de marketing digital</span>
+                <h2>Métricas de referencia</h2>
+                <p>Como parte del caso, es importante que tengas en cuenta algunas métricas frecuentes de pauta publicitaria.</p>
+            </div>
+
+            <div class="metric-cards-grid">
+
+                <!-- CPC -->
+                <div class="glass card-hover metric-card scroll-reveal delay-1">
+                    <div class="metric-badge gradient-text">CPC</div>
+                    <div class="metric-name">Costo por Click</div>
+                    <p class="metric-desc">Indica cuánto costó, en promedio, cada click generado por una campaña publicitaria.</p>
+                    <div class="metric-formula">costo / clicks</div>
+                </div>
+
+                <!-- CPM -->
+                <div class="glass card-hover metric-card scroll-reveal delay-2">
+                    <div class="metric-badge gradient-text">CPM</div>
+                    <div class="metric-name">Costo por Mil Impresiones</div>
+                    <p class="metric-desc">Indica cuánto cuesta generar mil impresiones de un anuncio en la plataforma.</p>
+                    <div class="metric-formula">(costo / impresiones) × 1000</div>
+                </div>
+
+                <!-- ROI -->
+                <div class="glass card-hover metric-card scroll-reveal delay-3">
+                    <div class="metric-badge gradient-text">ROI</div>
+                    <div class="metric-name">Return on Investment</div>
+                    <p class="metric-desc">Indica el retorno sobre la inversión realizada. También podés presentarlo como porcentaje.</p>
+                    <div class="metric-formula">(revenue − costo) / costo</div>
+                </div>
+
+            </div>
+
+            <div style="margin-top:20px; padding:16px 20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); text-align:center;" class="scroll-reveal delay-4">
+                <p style="font-size:0.83rem; color:var(--text-faint);">
+                    No es obligatorio limitarse a estas métricas. Si considerás que hay otras relevantes para el análisis, podés incluirlas y justificarlas.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 4: ENTREGABLES ─────────────────── -->
+    <section id="sec-entregables" class="section-spacer">
+        <div class="container">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-rose">Entregables</span>
+                <h2>Qué esperamos de tu entrega</h2>
+                <p>Esta es la parte más importante. Leé con atención qué esperamos en cada entregable.</p>
+            </div>
+
+            <!-- 1. Dashboard -->
+            <div class="glass card-hover deliverable-item scroll-reveal delay-1" style="margin-bottom:16px;">
+                <div class="deliverable-num" style="background:rgba(99,102,241,0.12); color:#818cf8; border:1px solid rgba(99,102,241,0.2);">1</div>
+                <h3 class="deliverable-title">Dashboard funcional e interactivo</h3>
+                <p class="deliverable-text">
+                    Construí un dashboard que permita entender rápidamente la performance del negocio y de la pauta publicitaria.
+                </p>
+
+                <p style="font-size:0.83rem; color:var(--text-faint); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Herramientas aceptadas</p>
+                <div class="tools-row" style="margin-bottom:20px;">
+                    <span class="tool-chip">Excel</span>
+                    <span class="tool-chip">Google Sheets</span>
+                    <span class="tool-chip">Looker Studio</span>
+                    <span class="tool-chip">Power BI</span>
+                    <span class="tool-chip">Tableau</span>
+                    <span class="tool-chip">Web propia</span>
+                    <span class="tool-chip">Herramientas con IA</span>
+                    <span class="tool-chip">Cualquier otra opción</span>
+                </div>
+
+                <p style="font-size:0.83rem; color:var(--text-faint); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">El dashboard debería permitir</p>
+                <ul class="check-list" style="margin-bottom:20px;">
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Analizar performance por canal</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Comparar Google Ads vs Meta Ads</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Entender evolución semanal</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Visualizar inversión, impresiones, clicks y revenue</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Incluir métricas derivadas: CPC, CPM, ROI</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Conectar performance comercial con productos y categorías</li>
+                </ul>
+
+                <p style="font-size:0.83rem; color:var(--text-faint); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Valoramos especialmente</p>
+                <ul class="check-list">
+                    <li><svg width="15" height="15" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Claridad visual y buena jerarquía de información</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Usabilidad e interactividad</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Capacidad de síntesis y foco en decisiones de negocio</li>
+                </ul>
+            </div>
+
+            <!-- 2. Automatización -->
+            <div class="glass card-hover deliverable-item scroll-reveal delay-2" style="margin-bottom:16px;">
+                <div class="deliverable-num" style="background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.2);">2</div>
+                <h3 class="deliverable-title">Automatización del proceso</h3>
+                <p class="deliverable-text">
+                    Proponé o construí al menos una automatización relacionada con el proceso. Puede ser una automatización real o un prototipo funcional. Lo importante es que tenga sentido de negocio y esté bien explicada.
+                </p>
+
+                <p style="font-size:0.83rem; color:var(--text-faint); margin-bottom:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Ejemplos posibles</p>
+                <div class="tools-row">
+                    <span class="tool-chip">Actualización automática de datos</span>
+                    <span class="tool-chip">Consolidación de tablas</span>
+                    <span class="tool-chip">Generación de métricas</span>
+                    <span class="tool-chip">Alertas de performance</span>
+                    <span class="tool-chip">Alertas de bajo stock</span>
+                    <span class="tool-chip">Reportes periódicos</span>
+                    <span class="tool-chip">Detección de campañas con bajo rendimiento</span>
+                    <span class="tool-chip">Resúmenes ejecutivos automáticos</span>
+                    <span class="tool-chip">Limpieza de datos</span>
+                </div>
+            </div>
+
+
+            <!-- Plus opcional: Agente IA -->
+            <div class="glass card-hover deliverable-item scroll-reveal delay-5" style="border-color: rgba(245,158,11,0.15);">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                    <div class="deliverable-num" style="background:rgba(245,158,11,0.1); color:#fbbf24; border:1px dashed rgba(245,158,11,0.3); margin-bottom:0;">·</div>
+                    <span class="optional-badge" style="margin-left:0;">Plus Opcional</span>
+                </div>
+                <h3 class="deliverable-title">Agente conversacional</h3>
+                <p class="deliverable-text">
+                    Como entregable opcional, podés sumar un agente conversacional que tenga acceso a los datos y permita responder preguntas sobre performance, campañas, ventas o stock.
+                </p>
+                <p style="font-size:0.85rem; color:#6b7280; margin-bottom:14px;">No es obligatorio. Si decidís hacerlo, valoraremos especialmente:</p>
+                <ul class="check-list">
+                    <li><svg width="15" height="15" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Utilidad real y buena experiencia de uso</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Calidad de las respuestas</li>
+                    <li><svg width="15" height="15" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Claridad de implementación</li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 5: DESCARGA ─────────────────────── -->
+    <section id="sec-descarga" class="section-spacer section-alt">
+        <div class="container-narrow">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-cyan">Descarga de archivos</span>
+                <h2>El material del caso</h2>
+                <p>Desde acá podés descargar el paquete con los archivos necesarios para resolver el caso.</p>
+            </div>
+
+            <div class="download-hero scroll-reveal delay-1">
+                <div style="position:relative; z-index:1;">
+                    <div style="width:64px; height:64px; border-radius:20px; background:linear-gradient(135deg, rgba(6,182,212,0.15), rgba(99,102,241,0.15)); border:1px solid rgba(6,182,212,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+                        <svg width="30" height="30" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <h3 style="font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:800; margin-bottom:10px;">Paquete de datos</h3>
+                    <p style="color:var(--text-muted); font-size:0.93rem; margin-bottom:8px;">
+                        Contiene la base de datos con las 4 tablas del caso en formato .xlsx o .csv.
+                    </p>
+                    <p style="color:var(--text-faint); font-size:0.82rem;">Formato compatible con Excel, Google Sheets, Python, R y más.</p>
+
+                    <div class="download-buttons">
+                        <!-- Botón único de descarga del ZIP -->
+                        <a id="btn-download-zip" href="#" class="btn btn-primary btn-lg" onclick="trackDownload('zip'); return true;" aria-label="Descargar ZIP con los datos del caso">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Descargar datos del caso
+                        </a>
+                    </div>
+                    <p style="font-size:0.78rem; color:var(--text-faint); margin-top:16px;">ZIP · 4 archivos CSV · ~55 KB</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 6: PASOS SUGERIDOS ─────────────── -->
+    <section class="section-spacer">
+        <div class="container-narrow">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-indigo">Sugerencia de abordaje</span>
+                <h2>Cómo arrancar</h2>
+                <p>No es obligatorio seguir este orden, pero puede ser útil para organizar el trabajo.</p>
+            </div>
+
+            <div class="steps-list">
+
+                <div class="step-item scroll-reveal delay-1">
+                    <div class="step-left">
+                        <div class="step-num" style="background:rgba(6,182,212,0.12); color:#22d3ee; border:1px solid rgba(6,182,212,0.2);">1</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Revisá las tablas</div>
+                        <p class="step-desc">Entendé qué información aporta cada una. Identificá el tipo de dato, la granularidad (semanal, por producto, por campaña) y posibles inconsistencias de naming o estructura.</p>
+                    </div>
+                </div>
+
+                <div class="step-item scroll-reveal delay-2">
+                    <div class="step-left">
+                        <div class="step-num" style="background:rgba(99,102,241,0.12); color:#818cf8; border:1px solid rgba(99,102,241,0.2);">2</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Definí la estructura de datos</div>
+                        <p class="step-desc">Cómo ordenarías o transformarías los datos para analizarlos de manera consistente. Proponé unions, normalizaciones o nuevas columnas calculadas que hagan sentido.</p>
+                    </div>
+                </div>
+
+                <div class="step-item scroll-reveal delay-3">
+                    <div class="step-left">
+                        <div class="step-num" style="background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.2);">3</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Construí el dashboard</div>
+                        <p class="step-desc">Construí un dashboard funcional que resuma la performance del negocio y de las campañas. Priorizá claridad visual y decisiones de negocio sobre complejidad técnica.</p>
+                    </div>
+                </div>
+
+                <div class="step-item scroll-reveal delay-4">
+                    <div class="step-left">
+                        <div class="step-num" style="background:rgba(245,158,11,0.12); color:#fbbf24; border:1px solid rgba(245,158,11,0.2);">4</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">Proponé una automatización</div>
+                        <p class="step-desc">Implementá o describí al menos una automatización con impacto real en el proceso. Puede ser una herramienta existente, un script o una propuesta funcional bien explicada.</p>
+                    </div>
+                </div>
+
+
+                <div class="step-item scroll-reveal delay-6">
+                    <div class="step-left">
+                        <div class="step-num" style="background:rgba(245,158,11,0.08); color:#fbbf24; border:1px dashed rgba(245,158,11,0.3);">·</div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-title">
+                            Agente conversacional
+                            <span class="optional-badge">Plus opcional</span>
+                        </div>
+                        <p class="step-desc">Si querés, sumá un agente conversacional como plus opcional. Tiene que ser funcional y aportar valor real, no solo demostración técnica.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 7: CRITERIOS ───────────────────── -->
+    <section class="section-spacer section-alt">
+        <div class="container">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-emerald">Criterios de evaluación</span>
+                <h2>Qué vamos a evaluar</h2>
+                <p>Transparencia total. No hay criterios ocultos. No buscamos una solución perfecta, sino una resolución sólida, clara y bien pensada.</p>
+            </div>
+
+            <div class="criteria-grid">
+                <div class="glass card-hover criterion-item scroll-reveal delay-1">
+                    <div class="criterion-icon" style="background:rgba(6,182,212,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <span class="criterion-text">Criterio analítico</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-2">
+                    <div class="criterion-icon" style="background:rgba(99,102,241,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <span class="criterion-text">Capacidad de ordenar datos</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-3">
+                    <div class="criterion-icon" style="background:rgba(16,185,129,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                    </div>
+                    <span class="criterion-text">Claridad de comunicación</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-4">
+                    <div class="criterion-icon" style="background:rgba(245,158,11,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                    </div>
+                    <span class="criterion-text">Calidad de visualización</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-1">
+                    <div class="criterion-icon" style="background:rgba(239,68,68,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </div>
+                    <span class="criterion-text">Pensamiento de negocio</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-2">
+                    <div class="criterion-icon" style="background:rgba(6,182,212,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <span class="criterion-text">Capacidad de automatización</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-3">
+                    <div class="criterion-icon" style="background:rgba(99,102,241,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    </div>
+                    <span class="criterion-text">Autonomía para resolver</span>
+                </div>
+                <div class="glass card-hover criterion-item scroll-reveal delay-4">
+                    <div class="criterion-icon" style="background:rgba(16,185,129,0.1);">
+                        <svg width="18" height="18" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <span class="criterion-text">Practicidad y funcionalidad</span>
+                </div>
+            </div>
+
+            <div style="margin-top:24px; text-align:center;" class="scroll-reveal delay-5">
+                <p style="font-size:0.85rem; color:var(--text-faint);">No hay una única solución correcta. Evaluamos tu criterio, tu proceso y la calidad de tu entrega.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ SECCIÓN 8: ENTREGA FINAL ───────────────── -->
+    <section id="sec-entrega" class="section-spacer">
+        <div class="container-narrow">
+            <div class="section-header scroll-reveal">
+                <span class="section-label label-rose">Entrega final</span>
+                <h2>Cuando termines, entregá acá</h2>
+                <p>Compartinos el link de tu entrega. Puede ser un link a Google Sheets, Looker Studio, Power BI, una web, un repositorio, WeTransfer o cualquier formato que hayas elegido.</p>
+            </div>
+
+            <div class="glass-strong scroll-reveal delay-1" style="padding:40px 40px; border-radius:var(--radius-xl);">
+                <form id="delivery-form" novalidate>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div class="form-group">
+                            <label class="form-label" for="field-name">Nombre y apellido *</label>
+                            <input class="form-input" id="field-name" type="text" placeholder="Tu nombre completo" autocomplete="name" required>
+                            <div class="form-error-msg" id="err-name">Por favor ingresá tu nombre.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="field-email">Email *</label>
+                            <input class="form-input" id="field-email" type="email" placeholder="tu@email.com" autocomplete="email" required>
+                            <div class="form-error-msg" id="err-email">Por favor ingresá un email válido.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="field-link">Link de entrega *</label>
+                        <input class="form-input" id="field-link" type="url" placeholder="https://docs.google.com/... o https://github.com/... o WeTransfer..." required>
+                        <div class="form-hint">Podés compartir cualquier tipo de link: Google Sheets, Looker Studio, repositorio, web propia, WeTransfer, etc.</div>
+                        <div class="form-error-msg" id="err-link">El link de entrega es obligatorio.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="field-comments">Comentarios adicionales <span style="color:var(--text-faint); font-weight:400; text-transform:none; letter-spacing:0;">(opcional)</span></label>
+                        <textarea class="form-textarea" id="field-comments" placeholder="Si querés agregar contexto, aclaraciones o comentarios sobre tu entrega..."></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-submit" class="btn btn-success" style="width:100%; padding:18px; font-size:1.05rem; border-radius:var(--radius); margin-top:8px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Finalizar caso
+                    </button>
+
+                    <p style="font-size:0.78rem; color:var(--text-faint); text-align:center; margin-top:16px;">
+                        Al enviar tu entrega, recibirás una confirmación y nos pondremos en contacto luego de la revisión.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ▸ FOOTER ─────────────────────────────────── -->
+    <footer>
+        <div class="container footer-inner">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="navbar-logo-dot" style="width:6px;height:6px;"></div>
+                <span>Hike · Evaluación Técnica</span>
+            </div>
+            <span>El contenido de este caso es confidencial y está destinado exclusivamente al/la candidato/a.</span>
+        </div>
+    </footer>
+
+</div><!-- /screen-main -->
+
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════ -->
+<script>
+    /* ──────────────────────────────────────────
+       CONFIGURACIÓN — leída desde window.CASO_CONFIG
+    ────────────────────────────────────────── */
+    const CONFIG = window.CASO_CONFIG || {};
+    const WEBHOOK_URL = CONFIG.WEBHOOK_URL || null;
+    const DOWNLOAD_ZIP_URL = CONFIG.DOWNLOAD_ZIP_URL || 'data/caso-hike-data.zip';
+
+    // Timestamp de inicio (se setea al hacer click en Empezar)
+    let caseStartTimestamp = null;
+
+    /* ──────────────────────────────────────────
+       INICIALIZAR LINKS DE DESCARGA
+    ────────────────────────────────────────── */
+    document.getElementById('btn-download-zip').href = DOWNLOAD_ZIP_URL;
+
+    /* ──────────────────────────────────────────
+       TOAST UTILITY
+    ────────────────────────────────────────── */
+    function showToast(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icons = {
+            success: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+            info: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+            error: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+        };
+        
+        toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('hiding');
+            setTimeout(() => toast.remove(), 350);
+        }, duration);
+    }
+
+    /* ──────────────────────────────────────────
+       WEBHOOK / NOTIFICACIÓN
+    ────────────────────────────────────────── */
+    async function sendNotification(payload) {
+        if (!WEBHOOK_URL) {
+            console.info('[Caso] Webhook no configurado. Payload:', payload);
+            return;
+        }
+        try {
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+        } catch (err) {
+            console.warn('[Caso] No se pudo enviar la notificación:', err);
+        }
+    }
+
+    /* ──────────────────────────────────────────
+       BOTÓN EMPEZAR
+    ────────────────────────────────────────── */
+    document.getElementById('btn-start').addEventListener('click', async function() {
+        const btn = this;
+        btn.innerHTML = '<div class="spinner"></div> Iniciando...';
+        btn.disabled = true;
+        btn.classList.add('btn-loading');
+
+        // Guardar timestamp de inicio
+        caseStartTimestamp = new Date().toISOString();
+
+        // Notificación
+        const payload = {
+            event: 'started_case',
+            timestamp: caseStartTimestamp,
+            userAgent: navigator.userAgent,
+        };
+        await sendNotification(payload);
+
+        // Transición: ocultar welcome → mostrar main
+        const welcome = document.getElementById('screen-welcome');
+        welcome.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        welcome.style.opacity = '0';
+        welcome.style.transform = 'scale(0.97)';
+
+        setTimeout(() => {
+            welcome.style.display = 'none';
+
+            // Mostrar elements
+            document.getElementById('navbar').classList.add('visible');
+            document.getElementById('progress-bar-wrap').style.display = 'block';
+
+            const main = document.getElementById('screen-main');
+            main.style.display = 'block';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    main.classList.add('active');
+                    initScrollReveal();
+                    updateProgressBar();
+                });
+            });
+        }, 500);
+    });
+
+    /* ──────────────────────────────────────────
+       SCROLL REVEAL
+    ────────────────────────────────────────── */
+    function initScrollReveal() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.08 });
+
+        document.querySelectorAll('#screen-main .scroll-reveal').forEach(el => {
+            observer.observe(el);
+        });
+    }
+
+    /* ──────────────────────────────────────────
+       PROGRESS BAR
+    ────────────────────────────────────────── */
+    function updateProgressBar() {
+        window.addEventListener('scroll', () => {
+            const total = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
+            document.getElementById('progress-bar-fill').style.width = progress + '%';
+        });
+    }
+
+    /* ──────────────────────────────────────────
+       NAVBAR SCROLL
+    ────────────────────────────────────────── */
+    window.addEventListener('scroll', () => {
+        const nav = document.getElementById('navbar');
+        if (!nav.classList.contains('visible')) return;
+        if (window.scrollY > 60) {
+            nav.style.background = 'rgba(15,23,42,0.92)';
+        } else {
+            nav.style.background = 'rgba(15,23,42,0.7)';
+        }
+    });
+
+    /* ──────────────────────────────────────────
+       TRACK DOWNLOADS
+    ────────────────────────────────────────── */
+    function trackDownload(type) {
+        sendNotification({
+            event: 'downloaded_file',
+            file_type: type,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    /* ──────────────────────────────────────────
+       FORMULARIO DE ENTREGA
+    ────────────────────────────────────────── */
+    document.getElementById('delivery-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('field-name');
+        const email = document.getElementById('field-email');
+        const link = document.getElementById('field-link');
+        const comments = document.getElementById('field-comments');
+        const btn = document.getElementById('btn-submit');
+
+        // Limpiar errores previos
+        [name, email, link].forEach(f => {
+            f.classList.remove('error');
+        });
+        ['err-name', 'err-email', 'err-link'].forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+
+        // Validación
+        let valid = true;
+
+        if (!name.value.trim()) {
+            name.classList.add('error');
+            document.getElementById('err-name').style.display = 'block';
+            valid = false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email.value.trim() || !emailRegex.test(email.value.trim())) {
+            email.classList.add('error');
+            document.getElementById('err-email').style.display = 'block';
+            valid = false;
+        }
+
+        if (!link.value.trim()) {
+            link.classList.add('error');
+            document.getElementById('err-link').style.display = 'block';
+            valid = false;
+        }
+
+        if (!valid) {
+            showToast('Completá los campos obligatorios antes de enviar.', 'error');
+            return;
+        }
+
+        // Loading state
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<div class="spinner"></div> Enviando...';
+        btn.disabled = true;
+        btn.classList.add('btn-loading');
+
+        // Payload
+        const finishTimestamp = new Date().toISOString();
+        const payload = {
+            event: 'finished_case',
+            timestamp: finishTimestamp,
+            started_at: caseStartTimestamp,
+            elapsed_minutes: caseStartTimestamp
+                ? Math.round((new Date(finishTimestamp) - new Date(caseStartTimestamp)) / 60000)
+                : null,
+            name: name.value.trim(),
+            email: email.value.trim(),
+            delivery_link: link.value.trim(),
+            comments: comments.value.trim(),
+            userAgent: navigator.userAgent,
+        };
+
+        await sendNotification(payload);
+
+        // Mostrar éxito
+        setTimeout(() => {
+            document.getElementById('success-screen').classList.add('visible');
+            showToast('¡Entrega recibida correctamente!', 'success', 6000);
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+        }, 800);
+    });
+
+    /* ──────────────────────────────────────────
+       SMOOTH SCROLL PARA LINKS DEL NAVBAR
+    ────────────────────────────────────────── */
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                e.preventDefault();
+                const offset = 80;
+                const top = target.getBoundingClientRect().top + window.scrollY - offset;
+                window.scrollTo({ top, behavior: 'smooth' });
+            }
+        });
+    });
+
+    /* ──────────────────────────────────────────
+       CERRAR PANTALLA DE ÉXITO
+    ────────────────────────────────────────── */
+    document.getElementById('success-screen').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.remove('visible');
+        }
+    });
+
+</script>
+
+</body>
+</html>
