@@ -6,6 +6,7 @@
     <title>Caso Práctico – Data, Automation & Reporting | Hike</title>
     <meta name="description" content="Caso práctico de evaluación para perfil de Data, Automation y Reporting. Analizá datos de marketing y ventas, construí visualizaciones y proponé automatizaciones.">
     <link rel="icon" type="image/png" href="https://storage.googleapis.com/abn-assets/hike_logo_blanco_1080x1080.png">
+    <link rel="apple-touch-icon" href="https://storage.googleapis.com/abn-assets/hike_logo_blanco_1080x1080.png">
 
     <!-- ═══════════════════════════════════════════════
          CONFIGURACIÓN — editá estas variables fácilmente
@@ -541,7 +542,7 @@
            MAIN PAGE HERO
         ═══════════════════════════════════════════ */
         #page-hero {
-            padding: 120px 24px 80px;
+            padding: 160px 24px 80px;
             text-align: center;
             position: relative;
             overflow: hidden;
@@ -1914,9 +1915,9 @@
         welcome.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
         welcome.style.opacity = '0';
         welcome.style.transform = 'scale(0.97)';
-
         setTimeout(() => {
             welcome.style.display = 'none';
+            window.scrollTo(0, 0);
 
             // Mostrar elements
             document.getElementById('navbar').classList.add('visible');
