@@ -1164,9 +1164,6 @@
 <!-- ═══════════════════════════════════════════════════
      PROGRESS BAR
 ══════════════════════════════════════════════════ -->
-<div class="progress-bar-wrap" id="progress-bar-wrap" style="display:none;">
-    <div class="progress-bar-fill" id="progress-bar-fill"></div>
-</div>
 
 <!-- ═══════════════════════════════════════════════════
      TOAST CONTAINER
@@ -1264,22 +1261,6 @@
 <!-- ═══════════════════════════════════════════════════
      NAVBAR (oculta hasta que se inicia el caso)
 ══════════════════════════════════════════════════ -->
-<nav id="navbar" aria-label="Navegación del caso">
-    <div class="navbar-inner">
-        <div class="navbar-logo">
-            <div class="navbar-logo-dot"></div>
-            <span>Hike · Caso Práctico</span>
-        </div>
-        <div class="navbar-links">
-            <a href="#sec-contexto">Contexto</a>
-            <a href="#sec-datos">Datos</a>
-            <a href="#sec-entregables">Entregables</a>
-            <a href="#sec-descarga">Descarga</a>
-            <a href="#sec-entrega">Entrega</a>
-        </div>
-        <a href="#sec-entrega" class="btn btn-primary btn-sm" style="padding:9px 20px; font-size:0.82rem;">Entregar →</a>
-    </div>
-</nav>
 
 
 <!-- ═══════════════════════════════════════════════════
@@ -1291,7 +1272,7 @@
     <section id="page-hero">
         <div class="hero-glow"></div>
         <div class="container" style="position:relative;z-index:1;">
-            <div class="hero-pills" style="padding-top: 80px;">
+            <div class="hero-pills">
                 <span class="section-label label-cyan" style="margin-bottom:0;">Ecommerce · Hogar & Deco</span>
                 <span class="section-label label-indigo" style="margin-bottom:0;">Google Ads · Meta Ads</span>
                 <span class="section-label label-emerald" style="margin-bottom:0;">Ventas · Stock</span>
@@ -1918,17 +1899,13 @@
             welcome.style.display = 'none';
             window.scrollTo(0, 0);
 
-            // Mostrar elements
-            document.getElementById('navbar').classList.add('visible');
-            document.getElementById('progress-bar-wrap').style.display = 'block';
+            // (navbar removed)
 
             const main = document.getElementById('screen-main');
             main.style.display = 'block';
-            requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     main.classList.add('active');
                     initScrollReveal();
-                    updateProgressBar();
                 });
             });
         }, 500);
@@ -1951,29 +1928,8 @@
         });
     }
 
-    /* ──────────────────────────────────────────
-       PROGRESS BAR
-    ────────────────────────────────────────── */
-    function updateProgressBar() {
-        window.addEventListener('scroll', () => {
-            const total = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
-            document.getElementById('progress-bar-fill').style.width = progress + '%';
-        });
-    }
 
-    /* ──────────────────────────────────────────
-       NAVBAR SCROLL
-    ────────────────────────────────────────── */
-    window.addEventListener('scroll', () => {
-        const nav = document.getElementById('navbar');
-        if (!nav.classList.contains('visible')) return;
-        if (window.scrollY > 60) {
-            nav.style.background = 'rgba(15,23,42,0.92)';
-        } else {
-            nav.style.background = 'rgba(15,23,42,0.7)';
-        }
-    });
+
 
     /* ──────────────────────────────────────────
        TRACK DOWNLOADS
